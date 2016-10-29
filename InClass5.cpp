@@ -1,6 +1,9 @@
+//Sammy Warren and Zach Shikles
 // L14_Ex1_Inheritance.cpp
 #include <iostream>
 #include <cstring>
+#include <stdio.h>
+#include <stdlib.h>
 
 using namespace std;
 
@@ -22,8 +25,24 @@ class BaseSig{
 		int getRawValue(int pos);
 		static int numObjects;	// static, only one member for the entire hierarchy
 		virtual void printInfo();
+		void openFile ();
 };
 
+void BaseSig::openFile()//contructor to be called if an integer is sent
+{
+	FILE *fp;
+	double maxV;
+	fp = fopen("Raw_data_01.txt", "r");//open the file
+	fscanf(fp, "%d %lf", &length, &maxV);//assign values to length and max
+	//raw_data = new double[length];//allocated memory of proper length
+
+	int i;
+	for(i = 0; i < length; i++)
+	{
+		fscanf(fp, "%d", &raw_data[i]);//load the values into the data variable
+	}
+	fclose(fp);//close the file
+}
 int BaseSig::numObjects = 0;	// initialize static data member
 
 // Base class constructor
@@ -31,6 +50,8 @@ BaseSig::BaseSig(){
 	length = 0;
 	raw_data = NULL;
 	numObjects++;
+	
+	
 }
 
 // Base class parametric constructor
@@ -41,6 +62,8 @@ BaseSig::BaseSig(int L){
 	if(raw_data == NULL)
 		cerr << "Error in memory allocation";
 	numObjects++;
+	openFile();
+	
 }
 
 // Base class destructor
@@ -67,6 +90,7 @@ void BaseSig::printInfo() {
 class ExtendSig : public BaseSig{ // ExtendSig is derived from class BaseSig
 //BaseSig is a public base class
 	private: 
+	protected:
 		double average;		// add new data members
 		double *data;
 		
@@ -138,38 +162,176 @@ void ExtendSig::printInfo() {
 		 << "Average: " << average << endl;
 }
 // ------------------------------------------------------------------
+class ProcessedSig : public BaseSig
+{
+	private:
+		double max;
+		double min;
+		double mean;
+	public:
+		double getMax();
+		double getMin();
+		void normalSig ();
+		void printInfo ();//display data length average max min
+		void scale(double val);
+		void update();
+		ProcessedSig (int L);
+		void getMean ();
+		
+};
 
+ProcessedSig:: ProcessedSig (int L): BaseSig(L)
+{
+	cout << "constructor called"<< endl;
+}
+
+void ProcessedSig::update () 
+{
+	getMax();
+	getMin();
+	getMean();
+	
+}
+void ProcessedSig::getMean()
+{
+	if(length == 0)
+		mean =(0.0);
+	else {
+		double temp = 0.0;
+		for(int i = 0; i < length; i++)
+			temp += raw_data[i];
+		mean = (temp/(double)length);
+	}
+}
+
+double ProcessedSig::getMax()
+{
+	int i;
+	max = raw_data[0];
+	for(i = 0; i < length; i++)
+	{
+		if(raw_data[i] > max)
+			max = raw_data[i];
+	}
+} 
+double ProcessedSig::getMin()
+{
+	int i;
+	min = raw_data[0];
+	for(i = 0; i < length; i++)
+	{
+		if(raw_data[i] < min)
+			min = raw_data[i];
+	}
+}
+void ProcessedSig:: normalSig ()
+{
+	getMax();
+	scale((1.0/max));
+	update ();
+}
+
+void ProcessedSig::scale(double val)
+{
+	int i;
+	for(i = 0; i < length; i++)//scales each number of the data array
+	{
+		raw_data[i] *= val;
+	}
+	
+}
+void ProcessedSig::printInfo ()
+{
+	update();
+	cout << "length: " << length << endl
+		 << "average:" << mean << endl
+		 << "maximum value: " << max << endl
+		 << "minimum value: " << min << endl;
+}
+
+class ProcessedSig_v2 : ExtendSig
+{
+	private:
+		double max;
+		double min;
+		double mean;
+	public:
+		double getMax();
+		double getMin();
+		void normalSig ();
+		void printInfo ();//display data length average max min
+		void scale(double val);
+		void update();
+		ProcessedSig_v2 (int L);
+		void getMean ();
+	
+};
+
+ProcessedSig_v2:: ProcessedSig_v2 (int L): ExtendSig (L){
+	cout << "constructor called"<< endl;
+}
+
+void ProcessedSig_v2::update () 
+{
+	getMax();
+	getMin();
+	average = getAverage();
+	
+}
+
+double ProcessedSig_v2::getMax()
+{
+	int i;
+	max = raw_data[0];
+	for(i = 0; i < length; i++)
+	{
+		if(raw_data[i] > max)
+			max = raw_data[i];
+	}
+} 
+double ProcessedSig_v2::getMin()
+{
+	int i;
+	min = raw_data[0];
+	for(i = 0; i < length; i++)
+	{
+		if(raw_data[i] < min)
+			min = raw_data[i];
+	}
+}
+void ProcessedSig_v2:: normalSig ()
+{
+	getMax();
+	scale((1.0/max));
+	update ();
+}
+
+void ProcessedSig_v2::scale(double val)
+{
+	int i;
+	for(i = 0; i < length; i++)//scales each number of the data array
+	{
+		raw_data[i] *= val;
+	}
+	
+}
+void ProcessedSig_v2::printInfo ()
+{
+	update();
+	cout <<"From ProcessedSig_v2:"<< endl
+		 << "length: " << length << endl
+		 << "average:" <<average << endl
+		 << "maximum value: " << max << endl
+		 << "minimum value: " << min << endl;
+}
 // Main function. A few examples
 int main(){
-	BaseSig bsig1(5);
-	ExtendSig esig1(10);
-	cout << "# of objects created: " << bsig1.numObjects << endl
-		 << "# of objects created: " << esig1.numObjects << endl;
-	bsig1.printInfo();
-	esig1.printInfo();
-	cout << "--------------------------------------------" << endl;
 	
-	cout << endl << bsig1.getRawValue(3) << endl
-		 << esig1.getRawValue(7) << endl
-		 << esig1.getValue(7) << endl;
-	cout << "--------------------------------------------" << endl;
-	
-	cout << endl << esig1.setValue(7, 2.5) << endl
-		 << esig1.setValue(12, 2.0) << endl;
-		 
-	cout << endl << esig1.getValue(7) << endl;
-	esig1.printInfo();
-	cout << "--------------------------------------------" << endl;
-	
-	BaseSig *ptrB = &bsig1;	// pointer points to object of base class
-	BaseSig &refB = bsig1;  // reference to object of base class
-	ptrB->printInfo();		// which version is used?
-	refB.printInfo();		// which version is used?
-	
-	ptrB = &esig1;	// pointer points to the base part of the object of derived class
-	BaseSig &refB2 = esig1; // reference bound to the base part of esig1
-	ptrB->printInfo();		// which version is used?
-	refB2.printInfo();		// which version is used?
-	cout << "--------------------------------------------" << endl;
+	ProcessedSig psig1 (5);
+	psig1.printInfo();
+	psig1.normalSig();
+	psig1.printInfo();
+	ProcessedSig_v2 psig2 (8);
+	psig2.printInfo();
 	return 0;
 }
